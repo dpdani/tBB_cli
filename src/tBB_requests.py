@@ -12,8 +12,11 @@ from asyncio import coroutine
 
 
 class RequestError(Exception):
-    def __init__(self, status, text):
-        super().__init__("Got error back from request: status = {}. Body: {}.".format(status, text))
+    def __init__(self, request, status, text):
+        self.request = request
+        self.status = status
+        self.text = text
+        super().__init__("Got error back from request '{}': status = {}. Body: {}.".format(request, status, text))
 
 
 class RequestsHandler(object):
@@ -30,12 +33,14 @@ class RequestsHandler(object):
 
     @coroutine
     def fetch(self, url, include_password=True):
-        response = yield from self.session.get(
-            "{}://{}:{}/{}/{}/".format('http', self.host, self.port, url, self.password if include_password else '')
-        )
+        with aiohttp.Timeout(3):
+            response = yield from self.session.get(
+                "{}://{}:{}/{}/{}".format('http', self.host, self.port, url, self.password + '/' if include_password else '')
+            )
         try:
             status = response.status
-            text = yield from response.text()
+            with aiohttp.Timeout(3):
+                text = yield from response.text()
             try:
                 text = json.loads(text)
             except:
@@ -48,28 +53,37 @@ class RequestsHandler(object):
                 yield from response.release()
         return status, text
 
-    def _create_request(self, name, url):
+    def _create_request(self, name, url, include_password=True):
         @coroutine
         def do_request(*args):
-            status, text = yield from self.fetch(url.format(*args))
+            status, text = yield from self.fetch(url.format(*args), include_password)
             if status == 200:
                 return text
             else:
-                raise RequestError(status, text)
+                raise RequestError(url.format(*args), status, text)
         setattr(self, name, do_request)
 
     def _create_default_requests(self):
+        # requests wrapped in a tuple do not require password
         requests = {
             'ip_info': 'ip_info/{}',
             'mac_info': 'mac_info/{}',
-            'test': 'test',
+            'test': ('test',),
+            'stats': 'stats',
             'status': 'status',
             'settings_get': 'settings/get/{}',
             'settings_set': 'settings/set/{}/{}',
             'ignore': 'ignore/{}/{}',
             'set_priority': 'set_priority/{}/{}',
-            'ip_host_changes': 'ip_host_changes/{}',
-            'mac_host_changes': 'mac_host_changes/{}'
+            'ip_host_changes': 'ip_host_changes/{}/{}/{}',
+            'mac_host_changes': 'mac_host_changes/{}/{}/{}'
         }
         for request in requests:
-            self._create_request(request, requests[request])
+            if type(requests[request]) == str:
+                self._create_request(request, requests[request])
+            elif type(requests[request]) == tuple:
+                self._create_request(request, requests[request][0], include_password=False)
+
+
+    def __del__(self):
+        self.session.close()
