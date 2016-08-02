@@ -4,23 +4,12 @@ tBB_cli entering screen.
 
 """
 import datetime
+import re
 import urwid
 import asyncio
+from .ip import IPView
+from . import common
 from urwid_satext.sat_widgets import List
-
-
-class SelectableText(urwid.Text):
-    def callback(self, data):
-        pass
-
-    def selectable(self):
-        return True
-
-    def keypress(self, size, key):
-        if key in (' ', 'enter'):
-            self.callback(self.text)
-            return True
-        return key
 
 
 class MainView(urwid.WidgetWrap):
@@ -40,7 +29,7 @@ class MainView(urwid.WidgetWrap):
             urwid.Padding(urwid.AttrWrap(self.network_label, ''), left=1),
             urwid.Divider(),
             urwid.AttrWrap(urwid.Text("Host changes (most recent first):"), 'mainview_title'),
-            self.hosts_list
+            self.hosts_list,
         ]
         super().__init__(urwid.ListBox(urwid.SimpleFocusListWalker(left_contents)))
         asyncio.async(self.fill_stats())
@@ -114,10 +103,27 @@ class MainView(urwid.WidgetWrap):
             self.set_hosts(["    No change found."])
         self.frame.reset_status()
 
+    def get_ip_info(self, label):
+        self.frame.set_status(label)
+        cmp = re.compile(
+            r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b",
+        )
+        res = cmp.findall(label)
+        self.frame.set_status("iP: {}".format(res))
+        if res:
+            ip = res[0]
+            self.frame.set_status("Jumping to IP {}...".format(ip))
+            ip_view = IPView(ip, self.handler, self.frame)
+            ip_view.app_quit = self.app_quit
+            self.frame.reset_status()
+            self.frame.set_body(ip_view)
+
     def set_hosts(self, hosts):
         hosts_ = []
         for host in hosts:
-            hosts_.append(urwid.AttrWrap(SelectableText(host), None, 'reveal focus'))
+            txt = common.SelectableText(host)
+            txt.callback = self.get_ip_info
+            hosts_.append(urwid.AttrWrap(txt, None, 'reveal focus'))
         self.hosts_list.genericList.content[:] = hosts_
         self.hosts_list.genericList.content.set_focus(0)
         # self.hosts_list_adapter.height = 5
