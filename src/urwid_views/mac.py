@@ -16,7 +16,11 @@ class MACView(urwid.WidgetWrap):
         self.mac = mac
         self.handler = handler
         self.frame = frame
-        self.title = urwid.Text("Information about MAC '{}':")
+        self.title = "MAC {}".format(mac)
+        self.refresh()
+
+    def refresh(self):
+        self.header = urwid.Text("Information about MAC '{}':")
         self.up = urwid.Text("Up: {}.")
         self.ip = common.SelectableText("IP: {}.")
         self.ip.callback = self.get_ip_info
@@ -25,7 +29,7 @@ class MACView(urwid.WidgetWrap):
         self.last_seen = urwid.Text("Last seen: {} ({} ago).")
         self.history_list = common.EntriesList([], max_height=100)
         contents = [
-            urwid.AttrWrap(self.title, 'mainview_title'),
+            urwid.AttrWrap(self.header, 'mainview_title'),
             urwid.Padding(self.up, left=1),
             urwid.Padding(self.ip, left=1),
             urwid.Padding(self.last_seen, left=1),
@@ -51,7 +55,7 @@ class MACView(urwid.WidgetWrap):
                 self.frame.set_status("Bad response: {}".format(exc), 'error')
             return
         self.frame.reset_status()
-        self.title.set_text(self.title.get_text()[0].format(info['mac'].upper()))
+        self.header.set_text(self.header.get_text()[0].format(info['mac'].upper()))
         if info['is_up']:
             self.up.set_text(self.up.get_text()[0].format('YES'))
         else:

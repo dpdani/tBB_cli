@@ -15,7 +15,11 @@ class IPView(urwid.WidgetWrap):
         self.ip = ip
         self.handler = handler
         self.frame = frame
-        self.title = urwid.Text("Information about IP '{}':")
+        self.title = "IP {}".format(ip)
+        self.refresh()
+
+    def refresh(self):
+        self.header = urwid.Text("Information about IP '{}':")
         self.up = urwid.Text("Up: {}.")
         self.mac = common.SelectableText("MAC: {}.")
         self.mac.callback = self.get_mac_info
@@ -25,7 +29,7 @@ class IPView(urwid.WidgetWrap):
         self.last_seen = urwid.Text("Last seen: {} ({} ago).")
         self.history_list = common.EntriesList([], max_height=100)
         contents = [
-            urwid.AttrWrap(self.title, 'mainview_title'),
+            urwid.AttrWrap(self.header, 'mainview_title'),
             urwid.Padding(self.up, left=1),
             urwid.Padding(self.mac, left=1),
             urwid.Padding(self.method, left=1),
@@ -47,7 +51,7 @@ class IPView(urwid.WidgetWrap):
             self.frame.set_status("Bad response: {}".format(exc), 'error')
             return
         self.frame.reset_status()
-        self.title.set_text(self.title.get_text()[0].format(info['ip']))
+        self.header.set_text(self.header.get_text()[0].format(info['ip']))
         if info['is_up']:
             self.up.set_text(self.up.get_text()[0].format('YES'))
         else:

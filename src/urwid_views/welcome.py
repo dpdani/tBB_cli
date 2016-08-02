@@ -13,6 +13,7 @@ import tBB_requests
 class WelcomeView(urwid.WidgetWrap):
     def __init__(self, frame):
         self.frame = frame
+        self.title = "tBB"
         self.location = urwid.Edit(caption="tBB location:    ")
         self.password = urwid.Edit("Access password: ", mask='*')
         urwid.connect_signal(self.location, 'change', self.clear_error)
@@ -36,6 +37,9 @@ class WelcomeView(urwid.WidgetWrap):
         self.listbox = urwid.ListBox(urwid.SimpleFocusListWalker(content))
         self.listbox = urwid.AttrWrap(self.listbox, 'body')
         super().__init__(self.listbox)
+
+    def refresh(self):
+        pass
 
     def clear_error(self, *args):
         self.frame.reset_status()

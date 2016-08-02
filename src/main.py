@@ -19,15 +19,26 @@ def app_quit():
 def unhandled_input(key):
     if key in ('q', 'Q', 'esc'):
         raise urwid.ExitMainLoop()
+    if key in ('w', 'W'):
+        frame.view_back()
+        return True
+    if key in ('e', 'E'):
+        frame.view_next()
+        return True
+    if key == 'f5':
+        frame.refresh()
+        return True
 
 
 palette = [
     ('body', 'default', 'default'),
     ('header', 'dark blue,bold', 'default'),
+    ('header buttons', 'dark blue', 'default'),
     ('footer', 'yellow', 'default'),
     ('error', 'dark red', 'default'),
     ('success', 'dark green', 'default'),
     ('waiting', 'yellow', 'default'),
+    ('navigation', 'dark gray,underline', 'default'),
     ('mainview_title', 'default,bold', 'default'),
     ('reveal focus', 'default,standout', 'default')
 ]

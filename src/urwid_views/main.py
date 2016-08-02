@@ -13,6 +13,10 @@ class MainView(urwid.WidgetWrap):
     def __init__(self, handler, frame):
         self.handler = handler
         self.frame = frame
+        self.title = "Home"
+        self.refresh()
+
+    def refresh(self):
         self.up_hosts_label = urwid.Text("Up hosts: {}")
         self.network_label = urwid.Text("Monitoring network: {}")
         # self.hosts_list = urwid.SimpleFocusListWalker([])

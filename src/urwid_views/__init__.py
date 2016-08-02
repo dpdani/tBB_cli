@@ -23,13 +23,22 @@ class MainFrame(urwid.Frame):
         self.header_date = urwid.AttrWrap(self.header_date, 'header')
         self.header_time = urwid.Text("{}", 'right')
         self.header_time = urwid.AttrWrap(self.header_time, 'header')
+        self.commands = urwid.Columns([
+            urwid.AttrWrap(urwid.Text("[esc: Exit]", 'left'), 'header buttons'),
+            urwid.AttrWrap(urwid.Text("[w: Back]", 'center'), 'header buttons'),
+            urwid.AttrWrap(urwid.Text("[e: Next]", 'center'), 'header buttons'),
+            urwid.AttrWrap(urwid.Text("[F5: Refresh]", 'right'), 'header buttons'),
+        ])
+        self.nav_position = urwid.AttrWrap(urwid.Text("ASD > asd"), 'navigation')
         self.header = urwid.Pile([
             urwid.Columns([
                 self.header_date,
                 ('weight', 2, self.header_txt),
                 self.header_time,
             ]),
-            urwid.AttrWrap(urwid.Divider(div_char='━'), 'header')
+            self.commands,
+            urwid.AttrWrap(urwid.Divider(div_char='━'), 'header'),
+            self.nav_position,
         ])
         self.placeholder = urwid.WidgetPlaceholder(urwid.Text("Placeholder"))
         self.body_history = {}
@@ -70,6 +79,8 @@ class MainFrame(urwid.Frame):
         return self._set_body(body)
 
     def _set_body(self, body):
+        views = list(self.body_history.values())[0:self.current_view]
+        self.nav_position.set_text(" →  ".join([entry.title for entry in views]))
         self.reset_status()
         return super().set_body(body)
 
@@ -84,12 +95,7 @@ class MainFrame(urwid.Frame):
             return
         self.current_view += 1
         return self._set_body(self.body_history[self.current_view])
-
-    def keypress(self, size, key):
-        if key in ('w', 'W'):
-            self.view_back()
-            return True
-        if key in ('e', 'E'):
-            self.view_next()
-            return True
-        return super().keypress(size, key)
+    
+    def refresh(self):
+        self.body_history[self.current_view].refresh()
+        self.body._invalidate()
