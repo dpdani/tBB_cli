@@ -12,6 +12,7 @@ import urwid_views
 
 def app_quit():
     print("Goodbye!")
+    asyncio.get_event_loop().stop()
     raise urwid.ExitMainLoop()
 
 
@@ -44,5 +45,7 @@ loop = urwid.MainLoop(
 try:
     loop.run()
 except KeyboardInterrupt:
+    pass
+except asyncio.CancelledError:
     pass
 print("Goodbye!")

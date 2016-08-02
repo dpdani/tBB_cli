@@ -4,12 +4,9 @@ tBB_cli entering screen.
 
 """
 import datetime
-import re
 import urwid
 import asyncio
-from .ip import IPView
 from . import common
-from urwid_satext.sat_widgets import List
 
 
 class MainView(urwid.WidgetWrap):
@@ -22,7 +19,7 @@ class MainView(urwid.WidgetWrap):
         # self.hosts_list_box = urwid.ListBox(self.hosts_list)
         # self.set_hosts([])
         # self.hosts_list_adapter = urwid.BoxAdapter(self.hosts_list_box, height=24-9)
-        self.hosts_list = List([], max_height=100)
+        self.hosts_list = common.EntriesList([], max_height=100)
         left_contents = [
             urwid.AttrWrap(urwid.Text("Network stats:"), 'mainview_title'),
             urwid.Padding(urwid.AttrWrap(self.up_hosts_label, ''), left=1),
@@ -103,20 +100,7 @@ class MainView(urwid.WidgetWrap):
             self.set_hosts(["    No change found."])
         self.frame.reset_status()
 
-    def get_ip_info(self, label):
-        self.frame.set_status(label)
-        cmp = re.compile(
-            r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b",
-        )
-        res = cmp.findall(label)
-        self.frame.set_status("iP: {}".format(res))
-        if res:
-            ip = res[0]
-            self.frame.set_status("Jumping to IP {}...".format(ip))
-            ip_view = IPView(ip, self.handler, self.frame)
-            ip_view.app_quit = self.app_quit
-            self.frame.reset_status()
-            self.frame.set_body(ip_view)
+    get_ip_info = common.get_ip_info
 
     def set_hosts(self, hosts):
         hosts_ = []
@@ -126,7 +110,6 @@ class MainView(urwid.WidgetWrap):
             hosts_.append(urwid.AttrWrap(txt, None, 'reveal focus'))
         self.hosts_list.genericList.content[:] = hosts_
         self.hosts_list.genericList.content.set_focus(0)
-        # self.hosts_list_adapter.height = 5
 
     def keypress(self, size, key):
         self.hosts_list.max_height = size[1] - 5

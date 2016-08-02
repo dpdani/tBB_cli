@@ -1,4 +1,9 @@
 import urwid
+import re
+from urwid_satext import sat_widgets
+
+IPView = None  # to be imported from urwid_views.ip
+MACView = None  # to be imported from urwid_views.mac
 
 
 class SelectableText(urwid.Text):
@@ -13,6 +18,45 @@ class SelectableText(urwid.Text):
             self.callback(self.text)
             return True
         return key
+
+
+class EntriesList(sat_widgets.List):
+    def keypress(self, size, key):
+        if key == 'home':
+            self.genericList.content.set_focus(0)
+            return True
+        if key == 'end':
+            self.genericList.content.set_focus(len(self.genericList.content)-1)
+            return True
+        return super().keypress(size, key)
+
+
+def get_ip_info(self, label):
+    cmp = re.compile(
+        r"(?:[0-9]{1,3}\.){3}[0-9]{1,3}",
+    )
+    res = cmp.findall(label)
+    if res:
+        ip = res[0]
+        self.frame.set_status("Jumping to IP {}...".format(ip))
+        ip_view = IPView(ip, self.handler, self.frame)
+        ip_view.app_quit = self.app_quit
+        self.frame.reset_status()
+        self.frame.set_body(ip_view)
+
+
+def get_mac_info(self, label):
+    cmp = re.compile(
+        r"([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])",
+    )
+    mac = cmp.search(label)
+    if mac:
+        mac = mac.group()
+        self.frame.set_status("Jumping to MAC {}...".format(mac))
+        mac_view = MACView(mac, self.handler, self.frame)
+        mac_view.app_quit = self.app_quit
+        self.frame.reset_status()
+        self.frame.set_body(mac_view)
 
 
 class OkPopUpDialog(urwid.WidgetWrap):
