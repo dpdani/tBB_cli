@@ -4,8 +4,15 @@ CLI frontend interface for tBB.
 
 """
 
-import asyncio
+## Using modified libraries
+## WARNING: libraries contained in tBB_cli/lib are modified.
+## You might not be able to perform clean libraries updates.
 import sys
+import os
+sys.path.insert(0, os.path.join(os.getcwd(), "lib"))  # use these instead of built-ins
+##
+
+import asyncio
 import urwid
 import urwid_views
 
@@ -45,6 +52,7 @@ palette = [
     ('dialog background', 'default', 'dark gray'),
     ('dialog button', 'default', 'dark gray'),
     ('dialog button focused', 'default', 'light blue'),
+    ('edit', 'default,underline', 'default')
 ]
 
 

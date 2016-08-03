@@ -60,27 +60,30 @@ class MainView(urwid.WidgetWrap):
         @asyncio.coroutine
         def wait_for_input(self):
             dialog = common.OkCancelEntryDialog(
-                "What IP?.", entry_caption='',
+                "What IP?", entry_caption='',
                 attr='default', width=30, height=8, body=self.frame
             )
             if (yield from dialog.listen()):
                 if not self.get_ip_info(dialog.edit_text):
                     self.frame.set_status("Please provide a valid ip address. Got: '{}'.".format(dialog.edit_text),
                                           'error')
+                    yield from asyncio.sleep(3)
+                    self.frame.reset_status()
         asyncio.async(wait_for_input(self))
 
     def on_mac(self, user_data):
         @asyncio.coroutine
         def wait_for_input(self):
             dialog = common.OkCancelEntryDialog(
-                "What MAC?.", entry_caption='',
+                "What MAC?", entry_caption='',
                 attr='default', width=30, height=8, body=self.frame
             )
             if (yield from dialog.listen()):
                 if not self.get_mac_info(dialog.edit_text):
                     self.frame.set_status("Please provide a valid mac address. Got: '{}'.".format(dialog.edit_text),
                                           'error')
-
+                    yield from asyncio.sleep(3)
+                    self.frame.reset_status()
         asyncio.async(wait_for_input(self))
 
     @asyncio.coroutine

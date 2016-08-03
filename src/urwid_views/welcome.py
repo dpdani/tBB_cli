@@ -7,6 +7,7 @@ tBB_cli entering screen.
 import urwid
 import asyncio
 from .main import MainView
+from . import common
 import tBB_requests
 
 
@@ -14,16 +15,18 @@ class WelcomeView(urwid.WidgetWrap):
     def __init__(self, frame):
         self.frame = frame
         self.title = "tBB"
-        self.location = urwid.Edit(caption="tBB location:    ")
-        self.password = urwid.Edit("Access password: ", mask='*')
-        urwid.connect_signal(self.location, 'change', self.clear_error)
-        urwid.connect_signal(self.password, 'change', self.clear_error)
+        self.location = common.StyledEdit("tBB location:", left_padding=5, edit_style=('edit', None))
+        self.password = common.StyledEdit("Access password:", left_padding=5, edit_style=('edit', None), mask='*')
+        urwid.connect_signal(self.location.edit, 'change', self.clear_error)
+        urwid.connect_signal(self.password.edit, 'change', self.clear_error)
         blank = urwid.AttrWrap(urwid.Divider(), 'body')
         content = [
             blank,
             blank,
-            urwid.Padding(self.location, left=5),
-            urwid.Padding(self.password, left=5),
+            urwid.Columns([('fixed', 22, urwid.Padding(urwid.Text("tBB location:"), left=5)),
+                           ('fixed', 22, urwid.AttrWrap(self.location, 'edit'))]),
+            urwid.Columns([('fixed', 22, urwid.Padding(urwid.Text("Access password:"), left=5)),
+                           ('fixed', 22, urwid.AttrWrap(self.password, 'edit'))]),
             blank,
             blank,
             blank,
@@ -47,13 +50,13 @@ class WelcomeView(urwid.WidgetWrap):
     def on_ok(self, *args):
         self.clear_error()
         try:
-            host, port = self.location.get_edit_text().split(':')
+            host, port = self.location.edit.get_edit_text().split(':')
             port = int(port)
         except:
             self.frame.set_status("Location malformed. Expected input to be in this format: 127.0.0.1:1984.", 'error')
             return
-        handler = tBB_requests.RequestsHandler(host, port, self.password.get_edit_text())
-        self.frame.set_status("Checking connection to {}...".format(self.location.get_edit_text()))
+        handler = tBB_requests.RequestsHandler(host, port, self.password.edit.get_edit_text())
+        self.frame.set_status("Checking connection to {}...".format(self.location.edit.get_edit_text()))
         asyncio.async(self.check_handler(handler))
 
     @asyncio.coroutine

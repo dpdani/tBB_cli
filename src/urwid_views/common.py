@@ -22,6 +22,18 @@ class SelectableText(urwid.Text):
         return key
 
 
+class StyledEdit(urwid.WidgetWrap):
+    def __init__(self, caption='', left_padding=0, caption_style=(None,None), edit_style=(None,None),
+                 edit_text="", *args, **kwargs):
+        self.text = urwid.AttrWrap(urwid.Text(caption), caption_style[0], caption_style[1])
+        self.edit = urwid.Edit(edit_text=edit_text, *args, **kwargs)
+        super().__init__(
+            urwid.Columns([
+                ('fixed', 22, urwid.Padding(self.text, left=left_padding)),
+                ('fixed', 22, urwid.AttrWrap(self.edit, edit_style[0], edit_style[1]))
+        ]))
+
+
 class EntriesList(sat_widgets.List):
     def __init__(self, lesser_height, *args, **kwargs):
         self.lesser_height = lesser_height
