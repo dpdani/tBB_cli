@@ -8,6 +8,8 @@ import datetime
 import urwid
 import asyncio
 from . import common
+from tBB_requests import RequestError
+from urwid_satext.sat_widgets import VerticalSeparator
 
 
 class IPView(urwid.WidgetWrap):
@@ -27,24 +29,114 @@ class IPView(urwid.WidgetWrap):
         self.method = urwid.Text("Discovery method: {}.")
         self.last_check = urwid.Text("Last checked: {} ({} ago).")
         self.last_seen = urwid.Text("Last seen: {} ({} ago).")
-        self.history_list = common.EntriesList([], max_height=100)
-        contents = [
+        self.ignored = urwid.Text("Ignored: {}.")
+        self.priority_txt = urwid.Text("Priority: {}.")
+        self.history_list = common.EntriesList(lesser_height=17, options=[], max_height=100)
+        left_contents = [
+            urwid.AttrWrap(urwid.Text("IP View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),
             urwid.Padding(self.up, left=1),
             urwid.Padding(self.mac, left=1),
             urwid.Padding(self.method, left=1),
             urwid.Padding(self.last_seen, left=1),
             urwid.Padding(self.last_check, left=1),
+            urwid.Padding(self.ignored, left=1),
+            urwid.Padding(self.priority_txt, left=1),
             urwid.Divider(),
             urwid.AttrWrap(urwid.Text("History (most recent first):"), 'mainview_title'),
             self.history_list,
         ]
-        super().__init__(urwid.ListBox(urwid.SimpleFocusListWalker(contents)))
+        self.cols = urwid.Columns([
+            ('weight', 3, urwid.ListBox(urwid.SimpleFocusListWalker(left_contents))),
+            VerticalSeparator(
+                urwid.ListBox(urwid.SimpleFocusListWalker([
+                    urwid.Button("Ignore", on_press=self.ignore),
+                    urwid.Button("Set priority", on_press=self.priority),
+                ]))
+            ),
+        ])
+        super().__init__(self.cols)
         asyncio.async(self.fill_stats())
+
+    def ignore(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input():
+            if self.ignored.get_text()[0].find("NO") > -1:
+                already_ignored = False
+            else:
+                already_ignored = True
+            sure = common.YesNoDialog(
+                "Are you sure you want to set this IP to be ignored?" if not already_ignored \
+                else "Are you sure you want to prevent this IP from being ignored?",
+                attr='default', width=30, height=6 if not already_ignored else 7, body=self.frame
+            )
+            if (yield from sure.listen()):
+                self.frame.set_status("Performing request for 'ignore'...")
+                try:
+                    yield from self.handler.ignore('toggle', self.ip)
+                except Exception as exc:
+                    self.frame.set_status("Unable to perform request due to error: {}".format(exc), 'error')
+                    return
+                self.frame.refresh()
+                yield from asyncio.sleep(0.1)
+                self.frame.set_status("Done.", 'body')
+                yield from asyncio.sleep(1)
+                self.frame.reset_status()
+        asyncio.async(wait_for_input())
+
+    def priority(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input():
+            try:
+                priority = list((yield from self.handler.get_priority(self.ip)).values())[0]
+            except Exception as exc:
+                self.frame.set_status("Unable to perform request due to error: {}".format(exc), 'error')
+                return
+            sure = common.OkCancelEntryDialog(
+                "Please, enter new priority for '{}'. Current priority is {}.".format(self.ip, priority),
+                entry_caption='', int_only=False, attr='default', width=30, height=8, body=self.frame
+            )
+            if (yield from sure.listen()):
+                try:
+                    yield from self.handler.set_priority(self.ip, int(sure.edit_text))
+                except ValueError:
+                    self.frame.set_status("Please, insert a valid integer. Got: '{}'.".format(sure.edit_text), 'error')
+                    return
+                except Exception as exc:
+                    self.frame.set_status("Unable to perform request due to error: {}".format(exc), 'error')
+                    return
+                self.frame.refresh()
+                yield from asyncio.sleep(0.1)
+                self.frame.set_status("Done.", 'body')
+                yield from asyncio.sleep(1)
+                self.frame.reset_status()
+        asyncio.async(wait_for_input())
 
     @asyncio.coroutine
     def fill_stats(self):
         self.frame.set_status("Waiting for response...")
+        try:
+            ignore_info = yield from self.handler.is_ignored(self.ip)
+        except RequestError as exc:
+            if exc.status == 406:
+                self.frame.set_status("Couldn't find IP '{}'.  Maybe it's in the ignore list?".format(
+                    self.ip), 'error')
+            else:
+                self.frame.set_status("Bad response: {}".format(exc), 'error')
+            return
+        except Exception as exc:
+            self.frame.set_status("Bad response: {}".format(exc), 'error')
+            return
+        if list(ignore_info.values())[0]:
+            self.ignored.set_text(self.ignored.get_text()[0].format('YES'))
+        else:
+            self.ignored.set_text(self.ignored.get_text()[0].format('NO'))
+        try:
+            priority = list((yield from self.handler.get_priority(self.ip)).values())[0]
+        except Exception as exc:
+            self.frame.set_status("Bad response: {}".format(exc), 'error')
+            return
+        self.priority_txt.set_text(self.priority_txt.get_text()[0].format(str(priority)))
         try:
             info = yield from self.handler.ip_info(self.ip)
         except Exception as exc:
@@ -99,7 +191,7 @@ class IPView(urwid.WidgetWrap):
                         str(change[0]), str(change[1])
                     )
                 changes_human_readable.append(
-                    " - {}: {}.".format(
+                    "  · {}: {}.".format(
                         datetime.datetime.fromtimestamp(float(change_time)).strftime("%d/%m/%Y-%H.%M.%S"),
                         message
                     ))
@@ -122,10 +214,6 @@ class IPView(urwid.WidgetWrap):
             changes_.append(urwid.AttrWrap(txt, None, 'reveal focus'))
         self.history_list.genericList.content[:] = changes_
         self.history_list.genericList.content.set_focus(0)
-
-    def keypress(self, size, key):
-        self.history_list.max_height = size[1] - 8
-        return super().keypress(size, key)
 
 
 common.IPView = IPView

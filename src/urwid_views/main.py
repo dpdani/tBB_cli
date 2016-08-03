@@ -7,6 +7,7 @@ import datetime
 import urwid
 import asyncio
 from . import common
+from urwid_satext.sat_widgets import VerticalSeparator
 
 
 class MainView(urwid.WidgetWrap):
@@ -19,12 +20,13 @@ class MainView(urwid.WidgetWrap):
     def refresh(self):
         self.up_hosts_label = urwid.Text("Up hosts: {}")
         self.network_label = urwid.Text("Monitoring network: {}")
-        # self.hosts_list = urwid.SimpleFocusListWalker([])
-        # self.hosts_list_box = urwid.ListBox(self.hosts_list)
-        # self.set_hosts([])
-        # self.hosts_list_adapter = urwid.BoxAdapter(self.hosts_list_box, height=24-9)
-        self.hosts_list = common.EntriesList([], max_height=100)
+        self.tbb_location = urwid.Text("tBB running at: {}.")
+        self.hosts_list = common.EntriesList(lesser_height=15, options=[], max_height=100)
         left_contents = [
+            urwid.AttrWrap(urwid.Text("Home", 'center'), 'header'),
+            urwid.AttrWrap(urwid.Text("tBB stats:"), 'mainview_title'),
+            urwid.Padding(self.tbb_location, left=1),
+            urwid.Divider(),
             urwid.AttrWrap(urwid.Text("Network stats:"), 'mainview_title'),
             urwid.Padding(urwid.AttrWrap(self.up_hosts_label, ''), left=1),
             urwid.Padding(urwid.AttrWrap(self.network_label, ''), left=1),
@@ -32,8 +34,54 @@ class MainView(urwid.WidgetWrap):
             urwid.AttrWrap(urwid.Text("Host changes (most recent first):"), 'mainview_title'),
             self.hosts_list,
         ]
-        super().__init__(urwid.ListBox(urwid.SimpleFocusListWalker(left_contents)))
+        self.cols = urwid.Columns([
+            ('weight', 3, urwid.ListBox(urwid.SimpleFocusListWalker(left_contents))),
+            VerticalSeparator(
+                urwid.ListBox(urwid.SimpleFocusListWalker([
+                    urwid.Button("Settings", on_press=self.on_settings),
+                    urwid.Button("About IP...", on_press=self.on_ip),
+                    urwid.Button("About MAC...", on_press=self.on_mac),
+                ]))
+            ),
+        ])
+        super().__init__(self.cols)
         asyncio.async(self.fill_stats())
+
+    def on_settings(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input():
+            yield from common.OkDialog(
+                "Work in progress.",
+                attr='default', width=30, height=8, body=self.frame
+            ).listen()
+        asyncio.async(wait_for_input())
+
+    def on_ip(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input(self):
+            dialog = common.OkCancelEntryDialog(
+                "What IP?.", entry_caption='',
+                attr='default', width=30, height=8, body=self.frame
+            )
+            if (yield from dialog.listen()):
+                if not self.get_ip_info(dialog.edit_text):
+                    self.frame.set_status("Please provide a valid ip address. Got: '{}'.".format(dialog.edit_text),
+                                          'error')
+        asyncio.async(wait_for_input(self))
+
+    def on_mac(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input(self):
+            dialog = common.OkCancelEntryDialog(
+                "What MAC?.", entry_caption='',
+                attr='default', width=30, height=8, body=self.frame
+            )
+            if (yield from dialog.listen()):
+                if not self.get_mac_info(dialog.edit_text):
+                    self.frame.set_status("Please provide a valid mac address. Got: '{}'.".format(dialog.edit_text),
+                                          'error')
+
+        asyncio.async(wait_for_input(self))
 
     @asyncio.coroutine
     def fill_stats(self):
@@ -46,6 +94,8 @@ class MainView(urwid.WidgetWrap):
         self.frame.reset_status()
         self.up_hosts_label.set_text(str(self.up_hosts_label.get_text()[0]).format(stats['up_hosts']))
         self.network_label.set_text(str(self.network_label.get_text()[0]).format(stats['network']))
+        self.tbb_location.set_text(str(self.tbb_location.get_text()[0]).format(
+            "{}://{}:{}/".format('http', self.handler.host, self.handler.port)))
         yield from self.fill_changes()
 
     @asyncio.coroutine
@@ -92,7 +142,7 @@ class MainView(urwid.WidgetWrap):
                         str(change[1]), str(change[2])
                     )
                 changes_human_readable.append(
-                    " - {}: {} {}.".format(
+                    "  · {}: {} {}.".format(
                         datetime.datetime.fromtimestamp(float(change_time)).strftime("%d/%m/%Y-%H.%M.%S"),
                         str(change[0]).upper(), message
                 ))
@@ -105,6 +155,7 @@ class MainView(urwid.WidgetWrap):
         self.frame.reset_status()
 
     get_ip_info = common.get_ip_info
+    get_mac_info = common.get_mac_info
 
     def set_hosts(self, hosts):
         hosts_ = []
@@ -114,7 +165,3 @@ class MainView(urwid.WidgetWrap):
             hosts_.append(urwid.AttrWrap(txt, None, 'reveal focus'))
         self.hosts_list.genericList.content[:] = hosts_
         self.hosts_list.genericList.content.set_focus(0)
-
-    def keypress(self, size, key):
-        self.hosts_list.max_height = size[1] - 5
-        return super().keypress(size, key)

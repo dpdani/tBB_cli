@@ -10,9 +10,14 @@ import asyncio
 import datetime
 from .welcome import WelcomeView
 from .main import MainView
+from .guide import GuideView
 from . import ip
 from . import mac
 from . import common
+
+
+def set_ui(ui):
+    common.ui = ui
 
 
 class MainFrame(urwid.Frame):
@@ -24,10 +29,11 @@ class MainFrame(urwid.Frame):
         self.header_time = urwid.Text("{}", 'right')
         self.header_time = urwid.AttrWrap(self.header_time, 'header')
         self.commands = urwid.Columns([
-            urwid.AttrWrap(urwid.Text("[esc: Exit]", 'left'), 'header buttons'),
+            urwid.AttrWrap(urwid.Text("[esc|q: Exit]", 'left'), 'header buttons'),
             urwid.AttrWrap(urwid.Text("[w: Back]", 'center'), 'header buttons'),
             urwid.AttrWrap(urwid.Text("[e: Next]", 'center'), 'header buttons'),
-            urwid.AttrWrap(urwid.Text("[F5: Refresh]", 'right'), 'header buttons'),
+            urwid.AttrWrap(urwid.Text("[F5|r: Refresh]", 'center'), 'header buttons'),
+            urwid.AttrWrap(urwid.Text("[h: Help]", 'right'), 'header buttons'),
         ])
         self.nav_position = urwid.AttrWrap(urwid.Text("ASD > asd"), 'navigation')
         self.header = urwid.Pile([
@@ -71,6 +77,9 @@ class MainFrame(urwid.Frame):
         self.set_status("Ready.", 'body')
 
     def set_body(self, body):
+        if hasattr(self, 'app_quit'):
+            body.app_quit = self.app_quit
+        self.reset_status()
         for view_index in list(self.body_history.keys()):
             if view_index > self.current_view:
                 del self.body_history[view_index]
@@ -99,3 +108,6 @@ class MainFrame(urwid.Frame):
     def refresh(self):
         self.body_history[self.current_view].refresh()
         self.body._invalidate()
+
+    def show_help(self):
+        self.set_body(GuideView(self))

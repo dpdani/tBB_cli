@@ -74,16 +74,19 @@ class RequestsHandler(object):
             'settings_get': 'settings/get/{}',
             'settings_set': 'settings/set/{}/{}',
             'ignore': 'ignore/{}/{}',
+            'ignore_mac': 'ignore_mac/{}/{}',
+            'is_ignored': 'is_ignored/{}',
+            'is_mac_ignored': 'is_mac_ignored/{}',
             'set_priority': 'set_priority/{}/{}',
+            'get_priority': 'get_priority/{}',
             'ip_host_changes': 'ip_host_changes/{}/{}/{}',
-            'mac_host_changes': 'mac_host_changes/{}/{}/{}'
+            'mac_host_changes': 'mac_host_changes/{}/{}/{}',
         }
         for request in requests:
             if type(requests[request]) == str:
                 self._create_request(request, requests[request])
             elif type(requests[request]) == tuple:
                 self._create_request(request, requests[request][0], include_password=False)
-
 
     def __del__(self):
         self.session.close()

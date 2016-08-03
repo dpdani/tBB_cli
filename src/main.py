@@ -11,8 +11,6 @@ import urwid_views
 
 
 def app_quit():
-    print("Goodbye!")
-    asyncio.get_event_loop().stop()
     raise urwid.ExitMainLoop()
 
 
@@ -25,8 +23,11 @@ def unhandled_input(key):
     if key in ('e', 'E'):
         frame.view_next()
         return True
-    if key == 'f5':
+    if key in ('f5', 'r', 'R'):
         frame.refresh()
+        return True
+    if key in ('h', 'H'):
+        frame.show_help()
         return True
 
 
@@ -40,7 +41,10 @@ palette = [
     ('waiting', 'yellow', 'default'),
     ('navigation', 'dark gray,underline', 'default'),
     ('mainview_title', 'default,bold', 'default'),
-    ('reveal focus', 'default,standout', 'default')
+    ('reveal focus', 'default,standout', 'default'),
+    ('dialog background', 'default', 'dark gray'),
+    ('dialog button', 'default', 'dark gray'),
+    ('dialog button focused', 'default', 'light blue'),
 ]
 
 
@@ -53,10 +57,14 @@ loop = urwid.MainLoop(
     frame, event_loop=evl, unhandled_input=unhandled_input,
     palette=palette
 )
+urwid_views.set_ui(loop.screen)
 try:
     loop.run()
 except KeyboardInterrupt:
     pass
-except asyncio.CancelledError:
-    pass
+finally:
+    for task in asyncio.Task.all_tasks():
+        task.cancel()
+    asyncio.get_event_loop().run_until_complete(asyncio.gather(*asyncio.Task.all_tasks()))
+    asyncio.get_event_loop().close()
 print("Goodbye!")

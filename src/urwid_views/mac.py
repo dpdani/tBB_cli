@@ -9,6 +9,7 @@ import urwid
 import asyncio
 from tBB_requests import RequestError
 from . import common
+from urwid_satext.sat_widgets import VerticalSeparator
 
 
 class MACView(urwid.WidgetWrap):
@@ -22,15 +23,18 @@ class MACView(urwid.WidgetWrap):
     def refresh(self):
         self.header = urwid.Text("Information about MAC '{}':")
         self.up = urwid.Text("Up: {}.")
+        self.ignored = urwid.Text("Ignored: {}.")
         self.ip = common.SelectableText("IP: {}.")
         self.ip.callback = self.get_ip_info
         self.ip = urwid.AttrWrap(self.ip, None, 'reveal focus')
         self.last_update = urwid.Text("Last updated: {} ({} ago).")
         self.last_seen = urwid.Text("Last seen: {} ({} ago).")
-        self.history_list = common.EntriesList([], max_height=100)
-        contents = [
+        self.history_list = common.EntriesList(lesser_height=15, options=[], max_height=1)
+        left_contents = [
+            urwid.AttrWrap(urwid.Text("MAC View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),
             urwid.Padding(self.up, left=1),
+            urwid.Padding(self.ignored, left=1),
             urwid.Padding(self.ip, left=1),
             urwid.Padding(self.last_seen, left=1),
             urwid.Padding(self.last_update, left=1),
@@ -38,18 +42,66 @@ class MACView(urwid.WidgetWrap):
             urwid.AttrWrap(urwid.Text("History (most recent first):"), 'mainview_title'),
             self.history_list,
         ]
-        super().__init__(urwid.ListBox(urwid.SimpleFocusListWalker(contents)))
+        self.cols = urwid.Columns([
+            ('weight', 3, urwid.ListBox(urwid.SimpleFocusListWalker(left_contents))),
+            VerticalSeparator(
+                urwid.ListBox(urwid.SimpleFocusListWalker([
+                    urwid.Button("Ignore", on_press=self.ignore),
+                ]))
+            ),
+        ])
+        super().__init__(self.cols)
         asyncio.async(self.fill_stats())
+
+    def ignore(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input():
+            if self.ignored.get_text()[0].find("NO") > -1:
+                already_ignored = False
+            else:
+                already_ignored = True
+            sure = common.YesNoDialog(
+                "Are you sure you want to set this MAC to be ignored?" if not already_ignored \
+                    else "Are you sure you want to prevent this MAC from being ignored?",
+                attr='default', width=31, height=6 if not already_ignored else 7, body=self.frame
+            )
+            if (yield from sure.listen()):
+                self.frame.set_status("Performing request for 'ignore'...")
+                try:
+                    yield from self.handler.ignore_mac('toggle', self.mac)
+                except Exception as exc:
+                    self.frame.set_status("Unable to perform request due to error: {}".format(exc), 'error')
+                    return
+                self.frame.refresh()
+                yield from asyncio.sleep(0.1)
+                self.frame.set_status("Done.", 'body')
+                yield from asyncio.sleep(1)
+                self.frame.reset_status()
+        asyncio.async(wait_for_input())
 
     @asyncio.coroutine
     def fill_stats(self):
         self.frame.set_status("Waiting for response...")
         try:
+            ignore_info = yield from self.handler.is_mac_ignored(self.mac)
+        except Exception as exc:
+            if isinstance(exc, RequestError):
+                if exc.status == 406:
+                    self.frame.set_status("Couldn't find MAC '{}'.  Maybe it's in the ignore list?".format(
+                        self.mac), 'error')
+            else:
+                self.frame.set_status("Bad response: {}".format(exc), 'error')
+            return
+        if list(ignore_info.values())[0]:
+            self.ignored.set_text(self.ignored.get_text()[0].format('YES'))
+        else:
+            self.ignored.set_text(self.ignored.get_text()[0].format('NO'))
+        try:
             info = yield from self.handler.mac_info(self.mac)
         except Exception as exc:
             if isinstance(exc, RequestError):
                 if exc.status == 406:
-                    self.frame.set_status("Bad response. Couldn't find MAC.  Maybe '{}' is in the ignore list?".format(
+                    self.frame.set_status("Couldn't find MAC '{}'.  Maybe it's in the ignore list?".format(
                         self.mac), 'error')
             else:
                 self.frame.set_status("Bad response: {}".format(exc), 'error')
@@ -102,7 +154,7 @@ class MACView(urwid.WidgetWrap):
                         str(change[0]), str(change[1])
                     )
                 changes_human_readable.append(
-                    " - {}: {}.".format(
+                    "  · {}: {}.".format(
                         datetime.datetime.fromtimestamp(float(change_time)).strftime("%d/%m/%Y-%H.%M.%S"),
                         message
                     ))
@@ -125,10 +177,6 @@ class MACView(urwid.WidgetWrap):
             changes_.append(urwid.AttrWrap(txt, None, 'reveal focus'))
         self.history_list.genericList.content[:] = changes_
         self.history_list.genericList.content.set_focus(0)
-
-    def keypress(self, size, key):
-        self.history_list.max_height = size[1] - 8
-        return super().keypress(size, key)
 
 
 common.MACView = MACView
