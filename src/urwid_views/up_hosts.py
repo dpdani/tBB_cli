@@ -7,6 +7,7 @@ import datetime
 import urwid
 import asyncio
 from . import common
+import socket
 from urwid_satext.sat_widgets import VerticalSeparator
 
 
@@ -41,7 +42,7 @@ class UpHostsView(urwid.WidgetWrap):
         except Exception as exc:
             self.frame.set_status("Bad response: {}".format(exc), 'error')
             return
-        ip_hosts = sorted(ip_hosts)
+        ip_hosts = sorted(ip_hosts, key=lambda item: socket.inet_aton(item))
         self.ips_list.genericList.content[:] = []
         self.frame.set_status("Parsing ip hosts response...")
         for host in ip_hosts:

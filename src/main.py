@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.getcwd(), "lib"))  # use these instead of bui
 import asyncio
 import urwid
 import urwid_views
+import urwid_views.common
 
 
 def app_quit():
@@ -23,7 +24,15 @@ def app_quit():
 
 def unhandled_input(key):
     if key in ('q', 'Q', 'esc'):
-        raise urwid.ExitMainLoop()
+        @asyncio.coroutine
+        def wait_for_input():
+            sure = urwid_views.common.YesNoDialog(
+                "Are you sure you want to quit?",
+                attr='default', width=30, height=6, body=frame
+            )
+            if (yield from sure.listen()):
+                raise urwid.ExitMainLoop()
+        asyncio.async(wait_for_input())
     if key in ('w', 'W'):
         frame.view_back()
         return True
