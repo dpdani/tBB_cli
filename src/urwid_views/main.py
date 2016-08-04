@@ -8,6 +8,7 @@ import urwid
 import asyncio
 from . import settings
 from . import up_hosts
+from . import ignored_hosts
 from . import common
 
 
@@ -41,6 +42,7 @@ class MainView(urwid.WidgetWrap):
                 urwid.ListBox(urwid.SimpleFocusListWalker([
                     urwid.Button("Settings", on_press=self.on_settings),
                     urwid.Button("Up Hosts", on_press=self.on_up_hosts),
+                    urwid.Button("Ignored Hosts", on_press=self.on_ignored_hosts),
                     urwid.Button("About IP...", on_press=self.on_ip),
                     urwid.Button("About MAC...", on_press=self.on_mac),
                 ]))
@@ -54,6 +56,9 @@ class MainView(urwid.WidgetWrap):
 
     def on_up_hosts(self, user_data):
         self.frame.set_body(up_hosts.UpHostsView(self.handler, self.frame))
+
+    def on_ignored_hosts(self, user_data):
+        self.frame.set_body(ignored_hosts.IgnoredHostsView(self.handler, self.frame))
 
     def on_ip(self, user_data):
         @asyncio.coroutine

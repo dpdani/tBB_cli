@@ -76,6 +76,8 @@ class RequestsHandler(object):
             'ignore': 'ignore/{}/{}',
             'ignore_mac': 'ignore_mac/{}/{}',
             'is_ignored': 'is_ignored/{}',
+            'ignored_ips': 'ignored_ips',
+            'ignored_macs': 'ignored_macs',
             'is_mac_ignored': 'is_mac_ignored/{}',
             'set_priority': 'set_priority/{}/{}',
             'get_priority': 'get_priority/{}',

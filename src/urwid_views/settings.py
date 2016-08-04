@@ -17,9 +17,10 @@ class SettingsView(urwid.WidgetWrap):
         self.refresh()
 
     def refresh(self):
-        self.seconds = common.StyledEdit("secs:", edit_width=3, edit_style=('edit', None), align='right')
-        self.minutes = common.StyledEdit("mins:", edit_width=3, edit_style=('edit', None), align='right')
-        self.random_time = common.StyledEdit("Maximum seconds randomly added:", text_width=35, edit_style=('edit', None))
+        self.seconds = common.StyledEdit("secs:", edit_width=3, edit_style=('edit', None), align='right', edit_pos=2)
+        self.minutes = common.StyledEdit("mins:", edit_width=3, edit_style=('edit', None), align='right', edit_pos=2)
+        self.random_time = common.StyledEdit("Maximum seconds randomly added:", text_width=35,
+                                             edit_style=('edit', None), align='right', edit_pos=2)
         self.automatically_ignore_broadcasts = None
         radio_buttons_group = []
         self.radio_buttons = [
@@ -32,13 +33,13 @@ class SettingsView(urwid.WidgetWrap):
             urwid.Divider(),
             urwid.Columns([
                 ('fixed', 36, urwid.Text("Time between checks:")),
-                ('fixed', 10, self.minutes),
+                ('fixed', 11, self.minutes),
                  ('fixed', 9, self.seconds),
             ]),
             self.random_time,
             urwid.Columns([
                 ('fixed', 36, urwid.Text("Automatically ignore broadcasts: ")),
-                urwid.GridFlow(self.radio_buttons, 13, 3, 1, 'left')
+                urwid.GridFlow(self.radio_buttons, 9, 3, 1, 'left')
             ]),
         ]
         self.cols = urwid.Columns([

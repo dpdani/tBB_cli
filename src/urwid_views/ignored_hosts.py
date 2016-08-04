@@ -1,6 +1,6 @@
 """
 
-tBB_cli up hosts view.
+tBB_cli ignored hosts view.
 
 """
 import datetime
@@ -8,14 +8,15 @@ import urwid
 import asyncio
 from . import common
 import socket
+from tBB_requests import RequestError
 from urwid_satext.sat_widgets import VerticalSeparator
 
 
-class UpHostsView(urwid.WidgetWrap):
+class IgnoredHostsView(urwid.WidgetWrap):
     def __init__(self, handler, frame):
         self.handler = handler
         self.frame = frame
-        self.title = "Up Hosts"
+        self.title = "Ignored Hosts"
         self.refresh()
 
     def refresh(self):
@@ -28,7 +29,7 @@ class UpHostsView(urwid.WidgetWrap):
             ),
         ])
         super().__init__(urwid.ListBox(urwid.SimpleFocusListWalker([
-            urwid.AttrWrap(urwid.Text("Up Hosts", 'center'), 'header'),
+            urwid.AttrWrap(urwid.Text("Ignored Hosts", 'center'), 'header'),
             urwid.Divider(),
             self.cols
         ])))
@@ -38,7 +39,7 @@ class UpHostsView(urwid.WidgetWrap):
     def fill_hosts(self):
         self.frame.set_status("Waiting for ip hosts response...")
         try:
-            ip_hosts = yield from self.handler.up_ip_hosts()
+            ip_hosts = yield from self.handler.ignored_ips()
         except Exception as exc:
             self.frame.set_status("Bad response: {}".format(exc), 'error')
             return
@@ -48,6 +49,16 @@ class UpHostsView(urwid.WidgetWrap):
         for host in ip_hosts:
             try:
                 host_info = yield from self.handler.ip_info(host)
+            except RequestError as exc:
+                if exc.status == 406:
+                    txt = common.SelectableText("  · {}:\nCouldn't get more information. "
+                                                "Probably due to the fact that it had been"
+                                                "ignored since tBB service start.".format(host))
+                    self.macs_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
+                    continue
+                else:
+                    self.frame.set_status("Bad response: {}".format(exc), 'error')
+                    return
             except Exception as exc:
                 self.frame.set_status("Bad response while looking for {}: {}".format(host, exc), 'error')
                 return
@@ -60,11 +71,11 @@ class UpHostsView(urwid.WidgetWrap):
             self.ips_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
             yield
         if len(self.ips_list.genericList.content) <= 0:
-            self.ips_list.genericList.content[:] = [urwid.Text("No IPs found.")]
+            self.ips_list.genericList.content[:] = [urwid.Text("No IP found.")]
         self.frame.set_status("Waiting for mac hosts response...")
         yield
         try:
-            mac_hosts = yield from self.handler.up_mac_hosts()
+            mac_hosts = yield from self.handler.ignored_macs()
         except Exception as exc:
             self.frame.set_status("Bad response: {}".format(exc), 'error')
             return
@@ -74,6 +85,16 @@ class UpHostsView(urwid.WidgetWrap):
         for host in mac_hosts:
             try:
                 host_info = yield from self.handler.mac_info(host)
+            except RequestError as exc:
+                if exc.status == 406:
+                    txt = common.SelectableText("  · {}:\n      Couldn't get more information. "
+                                                "This is probably due to the fact that it had been "
+                                                "ignored since tBB service start.".format(host.upper()))
+                    self.macs_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
+                    continue
+                else:
+                    self.frame.set_status("Bad response: {}".format(exc), 'error')
+                    return
             except Exception as exc:
                 self.frame.set_status("Bad response while looking for {}: {}".format(host, exc), 'error')
                 return
@@ -86,7 +107,7 @@ class UpHostsView(urwid.WidgetWrap):
             self.macs_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
             yield
         if len(self.macs_list.genericList.content) <= 0:
-            self.macs_list.genericList.content[:] = [urwid.Text("No MACs found.")]
+            self.macs_list.genericList.content[:] = [urwid.Text("No MAC found.")]
         self.frame.reset_status()
 
     get_ip_info = common.get_ip_info
