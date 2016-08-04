@@ -33,7 +33,7 @@ class RequestsHandler(object):
 
     @coroutine
     def fetch(self, url, include_password=True):
-        with aiohttp.Timeout(3):
+        with aiohttp.Timeout(4):
             response = yield from self.session.get(
                 "{}://{}:{}/{}/{}".format('http', self.host, self.port, url, self.password + '/' if include_password else '')
             )
@@ -81,6 +81,8 @@ class RequestsHandler(object):
             'get_priority': 'get_priority/{}',
             'ip_host_changes': 'ip_host_changes/{}/{}/{}',
             'mac_host_changes': 'mac_host_changes/{}/{}/{}',
+            'up_ip_hosts': 'up_ip_hosts',
+            'up_mac_hosts': 'up_mac_hosts',
         }
         for request in requests:
             if type(requests[request]) == str:

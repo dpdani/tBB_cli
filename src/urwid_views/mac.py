@@ -9,7 +9,6 @@ import urwid
 import asyncio
 from tBB_requests import RequestError
 from . import common
-from urwid_satext.sat_widgets import VerticalSeparator
 
 
 class MACView(urwid.WidgetWrap):
@@ -44,7 +43,7 @@ class MACView(urwid.WidgetWrap):
         ]
         self.cols = urwid.Columns([
             ('weight', 3, urwid.ListBox(urwid.SimpleFocusListWalker(left_contents))),
-            VerticalSeparator(
+            common.ExpandedVerticalSeparator(
                 urwid.ListBox(urwid.SimpleFocusListWalker([
                     urwid.Button("Ignore", on_press=self.ignore),
                 ]))

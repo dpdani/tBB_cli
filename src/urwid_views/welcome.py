@@ -15,18 +15,16 @@ class WelcomeView(urwid.WidgetWrap):
     def __init__(self, frame):
         self.frame = frame
         self.title = "tBB"
-        self.location = common.StyledEdit("tBB location:", left_padding=5, edit_style=('edit', None))
-        self.password = common.StyledEdit("Access password:", left_padding=5, edit_style=('edit', None), mask='*')
+        self.location = common.StyledEdit("tBB location:", edit_style=('edit', None), text_width=16, left_padding=5)
+        self.password = common.StyledEdit("Access password:", edit_style=('edit', None), mask='*', left_padding=5)
         urwid.connect_signal(self.location.edit, 'change', self.clear_error)
         urwid.connect_signal(self.password.edit, 'change', self.clear_error)
         blank = urwid.AttrWrap(urwid.Divider(), 'body')
         content = [
             blank,
             blank,
-            urwid.Columns([('fixed', 22, urwid.Padding(urwid.Text("tBB location:"), left=5)),
-                           ('fixed', 22, urwid.AttrWrap(self.location, 'edit'))]),
-            urwid.Columns([('fixed', 22, urwid.Padding(urwid.Text("Access password:"), left=5)),
-                           ('fixed', 22, urwid.AttrWrap(self.password, 'edit'))]),
+            urwid.Padding(self.location, align='center'),
+            urwid.Padding(self.password, align='center'),
             blank,
             blank,
             blank,
@@ -72,10 +70,8 @@ class WelcomeView(urwid.WidgetWrap):
             self.frame.set_status("Incorrect password.", 'error')
             return
         self.frame.set_status("Access granted.", 'success')
-        main_view = MainView(handler, self.frame)
-        main_view.app_quit = self.app_quit
         self.frame.reset_status()
-        self.frame.set_body(main_view)
+        self.frame.set_body(MainView(handler, self.frame))
 
     def on_quit(self, *args):
         if hasattr(self, 'app_quit'):

@@ -24,14 +24,20 @@ class SelectableText(urwid.Text):
 
 class StyledEdit(urwid.WidgetWrap):
     def __init__(self, caption='', left_padding=0, caption_style=(None,None), edit_style=(None,None),
-                 edit_text="", *args, **kwargs):
+                 edit_text="", text_width=None, edit_width=20, *args, **kwargs):
         self.text = urwid.AttrWrap(urwid.Text(caption), caption_style[0], caption_style[1])
         self.edit = urwid.Edit(edit_text=edit_text, *args, **kwargs)
-        super().__init__(
-            urwid.Columns([
-                ('fixed', 22, urwid.Padding(self.text, left=left_padding)),
-                ('fixed', 22, urwid.AttrWrap(self.edit, edit_style[0], edit_style[1]))
-        ]))
+        if text_width is None:
+            text_width = len(self.text.get_text()[0])
+        text_width += left_padding
+        super().__init__(urwid.Columns([
+            ('fixed', text_width, urwid.Padding(self.text, left=left_padding)),
+            ('fixed', edit_width, urwid.AttrWrap(self.edit, edit_style[0], edit_style[1]))
+        ], dividechars=1))
+
+class ExpandedVerticalSeparator(sat_widgets.VerticalSeparator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class EntriesList(sat_widgets.List):
@@ -75,8 +81,9 @@ def get_ip_info(self, label):
     if res:
         ip = res[0]
         self.frame.set_status("Jumping to IP {}...".format(ip))
-        ip_view = IPView(ip, self.handler, self.frame)
-        self.frame.set_body(ip_view)
+        self.frame.set_body(
+            IPView(ip, self.handler, self.frame)
+        )
         return True
     else:
         return False
@@ -90,8 +97,9 @@ def get_mac_info(self, label):
     if mac:
         mac = mac.group()
         self.frame.set_status("Jumping to MAC {}...".format(mac))
-        mac_view = MACView(mac, self.handler, self.frame)
-        self.frame.set_body(mac_view)
+        self.frame.set_body(
+            MACView(mac, self.handler, self.frame)
+        )
         return True
     else:
         return False

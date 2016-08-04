@@ -9,7 +9,6 @@ import urwid
 import asyncio
 from . import common
 from tBB_requests import RequestError
-from urwid_satext.sat_widgets import VerticalSeparator
 
 
 class IPView(urwid.WidgetWrap):
@@ -48,7 +47,7 @@ class IPView(urwid.WidgetWrap):
         ]
         self.cols = urwid.Columns([
             ('weight', 3, urwid.ListBox(urwid.SimpleFocusListWalker(left_contents))),
-            VerticalSeparator(
+            common.ExpandedVerticalSeparator(
                 urwid.ListBox(urwid.SimpleFocusListWalker([
                     urwid.Button("Ignore", on_press=self.ignore),
                     urwid.Button("Set priority", on_press=self.priority),

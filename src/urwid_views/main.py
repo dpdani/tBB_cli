@@ -6,8 +6,9 @@ tBB_cli entering screen.
 import datetime
 import urwid
 import asyncio
+from . import settings
+from . import up_hosts
 from . import common
-from urwid_satext.sat_widgets import VerticalSeparator
 
 
 class MainView(urwid.WidgetWrap):
@@ -36,9 +37,10 @@ class MainView(urwid.WidgetWrap):
         ]
         self.cols = urwid.Columns([
             ('weight', 3, urwid.ListBox(urwid.SimpleFocusListWalker(left_contents))),
-            VerticalSeparator(
+            common.ExpandedVerticalSeparator(
                 urwid.ListBox(urwid.SimpleFocusListWalker([
                     urwid.Button("Settings", on_press=self.on_settings),
+                    urwid.Button("Up Hosts", on_press=self.on_up_hosts),
                     urwid.Button("About IP...", on_press=self.on_ip),
                     urwid.Button("About MAC...", on_press=self.on_mac),
                 ]))
@@ -48,13 +50,10 @@ class MainView(urwid.WidgetWrap):
         asyncio.async(self.fill_stats())
 
     def on_settings(self, user_data):
-        @asyncio.coroutine
-        def wait_for_input():
-            yield from common.OkDialog(
-                "Work in progress.",
-                attr='default', width=30, height=8, body=self.frame
-            ).listen()
-        asyncio.async(wait_for_input())
+        self.frame.set_body(settings.SettingsView(self.handler, self.frame))
+
+    def on_up_hosts(self, user_data):
+        self.frame.set_body(up_hosts.UpHostsView(self.handler, self.frame))
 
     def on_ip(self, user_data):
         @asyncio.coroutine
