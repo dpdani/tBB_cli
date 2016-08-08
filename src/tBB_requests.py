@@ -8,6 +8,7 @@ import json
 import asyncio
 import aiohttp
 import sys
+import ssl
 from asyncio import coroutine
 
 
@@ -20,7 +21,7 @@ class RequestError(Exception):
 
 
 class RequestsHandler(object):
-    def __init__(self, host, port, password, loop=None):
+    def __init__(self, host, port, password, use_ssl=True, loop=None):
         self.host = host
         self.port = port
         self.password = password
@@ -28,15 +29,26 @@ class RequestsHandler(object):
             self.loop = asyncio.get_event_loop()
         else:
             self.loop = loop
-        self.session = aiohttp.ClientSession()
+        if use_ssl:
+            self.sslcontext = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+            self.sslcontext.options |= ssl.OP_NO_SSLv2
+            self.sslcontext.options |= ssl.OP_NO_SSLv3
+            self.sslcontext.check_hostname = False
+            self.sslcontext.verify_mode = ssl.CERT_NONE
+        else:
+            self.sslcontext = None
+        self.conn = aiohttp.TCPConnector(ssl_context=self.sslcontext)
+        self.session = aiohttp.ClientSession(connector=self.conn)
         self._create_default_requests()
 
     @coroutine
     def fetch(self, url, include_password=True):
         with aiohttp.Timeout(4):
             response = yield from self.session.get(
-                "{}://{}:{}/{}/{}".format('http', self.host, self.port, url, self.password + '/' if include_password else '')
-            )
+                "{}://{}:{}/{}/{}".format(
+                    'https' if self.sslcontext else 'http', self.host, self.port, url,
+                    self.password + '/' if include_password else ''
+            ))
         try:
             status = response.status
             with aiohttp.Timeout(3):
