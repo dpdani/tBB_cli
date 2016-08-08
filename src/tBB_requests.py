@@ -8,6 +8,7 @@ import json
 import asyncio
 import aiohttp
 import sys
+import os
 import ssl
 from asyncio import coroutine
 
@@ -33,8 +34,14 @@ class RequestsHandler(object):
             self.sslcontext = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
             self.sslcontext.options |= ssl.OP_NO_SSLv2
             self.sslcontext.options |= ssl.OP_NO_SSLv3
-            self.sslcontext.check_hostname = False
-            self.sslcontext.verify_mode = ssl.CERT_NONE
+            ca_file_path = os.path.join(os.getcwd(), "certs", "cert.pem")
+            key_file_path = os.path.join(os.getcwd(), "certs", "key.pem")
+            if os.path.isfile(ca_file_path) and os.path.isfile(key_file_path):
+                self.sslcontext.load_cert_chain(certfile=ca_file_path, keyfile=key_file_path)
+                self.sslcontext.check_hostname = True
+            else:
+                self.sslcontext.check_hostname = False
+                self.sslcontext.verify_mode = ssl.CERT_NONE
         else:
             self.sslcontext = None
         self.conn = aiohttp.TCPConnector(ssl_context=self.sslcontext)
