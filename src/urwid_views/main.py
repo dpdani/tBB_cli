@@ -102,7 +102,8 @@ class MainView(urwid.WidgetWrap):
         self.up_hosts_label.set_text(str(self.up_hosts_label.get_text()[0]).format(stats['up_hosts']))
         self.network_label.set_text(str(self.network_label.get_text()[0]).format(stats['network']))
         self.tbb_location.set_text(str(self.tbb_location.get_text()[0]).format(
-            "{}://{}:{}/".format('http', self.handler.host, self.handler.port)))
+            "{}://{}:{}/".format('http' if self.handler.sslcontext is None else 'https',
+                                 self.handler.host, self.handler.port)))
         yield from self.fill_changes()
 
     @asyncio.coroutine
