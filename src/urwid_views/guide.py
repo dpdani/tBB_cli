@@ -160,7 +160,26 @@ graphic element that has a MAC address in it.||
   Differently from the IP view, you should consider that,
 since a MAC address isn't bound to a single IP address,
 in the IP field there might be more than one IP.||
-
+||
+    The Settings view.||
+  This view shows you the possible ways you can set tBB
+to work. As of today, there are only a few parameters you can set.
+Here they are explained:||
+    - Time between checks: this is the time each tracker waits
+before checking a new IP. A higher value in this field means a
+lesser weight of tBB on the network. If you think that tBB is
+slowing the network down too much you might want to change
+this parameter.||
+    - Maximum seconds randomly added: seconds to add to
+"Time between checks". Seconds actually added vary from 0
+to the value here specified randomly. This behaviour has
+been implemented in order to make more difficult for hosts
+to detect tBB presence.||
+    - Automatically ignore broadcasts: set this to 'Yes' if you
+want broadcasts found during checks to be automatically ignored.
+In case this is set to 'No', even if tBB detects a broadcast
+while working, it will be repeatedly checked (and failed) in
+every check iteration.||
 |||||| Have fun! :D
 """.replace('--\n', '').replace('\n', ' ').replace('|| ', '\n').replace('||', '\n')),
             blank,
