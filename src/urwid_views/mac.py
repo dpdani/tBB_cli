@@ -7,6 +7,7 @@ MAC view.
 import datetime
 import urwid
 import asyncio
+import socket
 from tBB_requests import RequestError
 from . import common
 
@@ -21,21 +22,16 @@ class MACView(urwid.WidgetWrap):
 
     def refresh(self):
         self.header = urwid.Text("Information about MAC '{}':")
-        self.up = urwid.Text("Up: {}.")
         self.ignored = urwid.Text("Ignored: {}.")
-        self.ip = common.SelectableText("IP: {}.")
-        self.ip.callback = self.get_ip_info
-        self.ip = urwid.AttrWrap(self.ip, None, 'reveal focus')
+        self.ip_list = common.EntriesList(options=['Waiting...'], fixed_height=4, max_height=4, lesser_height=0)
         self.last_update = urwid.Text("Last updated: {} ({} ago).")
-        self.last_seen = urwid.Text("Last seen: {} ({} ago).")
         self.history_list = common.EntriesList(lesser_height=15, options=[], max_height=1)
         left_contents = [
             urwid.AttrWrap(urwid.Text("MAC View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),
-            urwid.Padding(self.up, left=1),
             urwid.Padding(self.ignored, left=1),
-            urwid.Padding(self.ip, left=1),
-            urwid.Padding(self.last_seen, left=1),
+            urwid.Padding(urwid.Text("IPs:"), left=1),
+            urwid.Padding(self.ip_list, left=3),
             urwid.Padding(self.last_update, left=1),
             urwid.Divider(),
             urwid.AttrWrap(urwid.Text("History (most recent first):"), 'mainview_title'),
@@ -107,15 +103,13 @@ class MACView(urwid.WidgetWrap):
             return
         self.frame.reset_status()
         self.header.set_text(self.header.get_text()[0].format(info['mac'].upper()))
-        if info['is_up']:
-            self.up.set_text(self.up.get_text()[0].format('YES'))
-        else:
-            self.up.set_text(self.up.get_text()[0].format('NO'))
-        self.ip.set_text(self.ip.get_text()[0].format(info['ip']))
-        self.last_seen.set_text(self.last_seen.get_text()[0].format(
-            datetime.datetime.fromtimestamp(info['last_seen']).strftime("%d/%m/%Y-%H.%M.%S"),
-            (datetime.datetime.now() - datetime.datetime.fromtimestamp(info['last_seen']))
-        ))
+        self.ip_list.genericList.content[:] = []
+        for ip in sorted(info['ip'], key=lambda item: socket.inet_aton(item)):
+            txt = common.SelectableText(ip)
+            txt.callback = self.get_ip_info
+            txt = urwid.AttrWrap(txt, None, 'reveal focus')
+            self.ip_list.genericList.content.append(txt)
+            yield
         self.last_update.set_text(self.last_update.get_text()[0].format(
             datetime.datetime.fromtimestamp(info['last_update']).strftime("%d/%m/%Y-%H.%M.%S"),
             (datetime.datetime.now() - datetime.datetime.fromtimestamp(info['last_update']))

@@ -98,16 +98,21 @@ class IgnoredHostsView(urwid.WidgetWrap):
             except Exception as exc:
                 self.frame.set_status("Bad response while looking for {}: {}".format(host, exc), 'error')
                 return
+            ips = sorted(host_info['ip'], key=lambda item: socket.inet_aton(item))
+            if len(ips) > 3:
+                ips = [ips[0], ips[1], ips[2], '...']
             txt = common.SelectableText("  · {}:\n      {}\n      last seen: {} ({} ago).".format(
-                host.upper(), host_info['ip'],
-                datetime.datetime.fromtimestamp(host_info['last_seen']).strftime("%d/%m/%Y-%H.%M.%S"),
-                (datetime.datetime.now() - datetime.datetime.fromtimestamp(host_info['last_seen']))
+                host.upper(), ips,
+                datetime.datetime.fromtimestamp(host_info['last_update']).strftime("%d/%m/%Y-%H.%M.%S"),
+                (datetime.datetime.now() - datetime.datetime.fromtimestamp(host_info['last_update']))
             ))
             txt.callback = self.get_mac_info
             self.macs_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
             yield
         if len(self.macs_list.genericList.content) <= 0:
-            self.macs_list.genericList.content[:] = [urwid.Text("No MAC found.")]
+            self.macs_list.genericList.content[:] = [
+                urwid.AttrWrap(common.SelectableText("  No MAC found."), None, 'reveal focus')
+            ]
         self.frame.reset_status()
 
     get_ip_info = common.get_ip_info

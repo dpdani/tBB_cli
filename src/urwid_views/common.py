@@ -41,14 +41,18 @@ class ExpandedVerticalSeparator(sat_widgets.VerticalSeparator):
 
 
 class EntriesList(sat_widgets.List):
-    def __init__(self, lesser_height, *args, **kwargs):
+    def __init__(self, lesser_height, fixed_height=None, *args, **kwargs):
         self.lesser_height = lesser_height
+        self.fixed_height = fixed_height
         super().__init__(*args, **kwargs)
         self.reset_max_height()
 
     def reset_max_height(self):
-        self.max_height = min(ui.get_cols_rows()[1], ui.get_cols_rows()[1] - self.lesser_height) or 1
-        self._invalidate()
+        if self.fixed_height is None:
+            self.max_height = min(ui.get_cols_rows()[1], ui.get_cols_rows()[1] - self.lesser_height) or 1
+            self._invalidate()
+        else:
+            self.max_height = self.fixed_height
 
     def keypress(self, size, key):
         self.reset_max_height()

@@ -77,10 +77,13 @@ class UpHostsView(urwid.WidgetWrap):
             except Exception as exc:
                 self.frame.set_status("Bad response while looking for {}: {}".format(host, exc), 'error')
                 return
-            txt = common.SelectableText("  · {}:\n      {}\n      last seen: {} ({} ago).".format(
-                host.upper(), host_info['ip'],
-                datetime.datetime.fromtimestamp(host_info['last_seen']).strftime("%d/%m/%Y-%H.%M.%S"),
-                (datetime.datetime.now() - datetime.datetime.fromtimestamp(host_info['last_seen']))
+            ips = host_info['ip']
+            if len(ips) > 3:
+                ips = [ips[0], ips[1], ips[2], '...']
+            txt = common.SelectableText("  · {}:\n      {}\n      last update: {} ({} ago).".format(
+                host.upper(), str(ips),
+                datetime.datetime.fromtimestamp(host_info['last_update']).strftime("%d/%m/%Y-%H.%M.%S"),
+                (datetime.datetime.now() - datetime.datetime.fromtimestamp(host_info['last_update']))
             ))
             txt.callback = self.get_mac_info
             self.macs_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
