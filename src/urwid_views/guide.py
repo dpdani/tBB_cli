@@ -14,7 +14,7 @@ class GuideView(urwid.WidgetWrap):
         self.title = "Guide"
         blank = urwid.AttrWrap(urwid.Divider(), 'body')
         content = [
-            urwid.AttrWrap(urwid.Text("tBB CLI Guide."), 'mainview_title'),
+            urwid.AttrWrap(urwid.Text("tBB CLI Guide", 'center'), 'header'),
             urwid.Text(
 """||
      About tBB.||
