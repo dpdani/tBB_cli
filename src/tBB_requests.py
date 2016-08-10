@@ -87,6 +87,7 @@ class RequestsHandler(object):
         requests = {
             'ip_info': 'ip_info/{}',
             'mac_info': 'mac_info/{}',
+            'name_info': 'name_info/{}',
             'test': ('test',),
             'stats': 'stats',
             'status': 'status',
@@ -94,16 +95,21 @@ class RequestsHandler(object):
             'settings_set': 'settings/set/{}/{}',
             'ignore': 'ignore/{}/{}',
             'ignore_mac': 'ignore_mac/{}/{}',
+            'ignore_name': 'ignore_name/{}/{}',
             'is_ignored': 'is_ignored/{}',
+            'is_mac_ignored': 'is_mac_ignored/{}',
+            'is_name_ignored': 'is_name_ignored/{}',
             'ignored_ips': 'ignored_ips',
             'ignored_macs': 'ignored_macs',
-            'is_mac_ignored': 'is_mac_ignored/{}',
+            'ignored_names': 'ignored_names',
             'set_priority': 'set_priority/{}/{}',
             'get_priority': 'get_priority/{}',
             'ip_host_changes': 'ip_host_changes/{}/{}/{}',
             'mac_host_changes': 'mac_host_changes/{}/{}/{}',
+            'name_host_changes': 'name_host_changes/{}/{}/{}',
             'up_ip_hosts': 'up_ip_hosts',
             'up_mac_hosts': 'up_mac_hosts',
+            'up_name_hosts': 'up_name_hosts',
         }
         for request in requests:
             if type(requests[request]) == str:

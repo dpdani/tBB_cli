@@ -145,6 +145,9 @@ class MainView(urwid.WidgetWrap):
                     change[1] = 'mac'
                 elif type_ == 'discovery_history':
                     change[1] = 'discovery method'
+                elif type_ == 'name_history':
+                    change[1] = 'name'
+                    change[2] = ':{}:'.format(change[2])
                 if message is None:
                     message = "changed {} to '{}'".format(
                         str(change[1]), str(change[2])

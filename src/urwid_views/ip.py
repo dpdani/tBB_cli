@@ -22,6 +22,9 @@ class IPView(urwid.WidgetWrap):
     def refresh(self):
         self.header = urwid.Text("Information about IP '{}':")
         self.up = urwid.Text("Up: {}.")
+        self.name = common.SelectableText("Name: ':{}:'.")
+        self.name.callback = self.get_name_info
+        self.name = urwid.AttrWrap(self.name, None, 'reveal focus')
         self.mac = common.SelectableText("MAC: {}.")
         self.mac.callback = self.get_mac_info
         self.mac = urwid.AttrWrap(self.mac, None, 'reveal focus')
@@ -35,6 +38,7 @@ class IPView(urwid.WidgetWrap):
             urwid.AttrWrap(urwid.Text("IP View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),
             urwid.Padding(self.up, left=1),
+            urwid.Padding(self.name, left=1),
             urwid.Padding(self.mac, left=1),
             urwid.Padding(self.method, left=1),
             urwid.Padding(self.last_seen, left=1),
@@ -147,6 +151,7 @@ class IPView(urwid.WidgetWrap):
             self.up.set_text(self.up.get_text()[0].format('YES'))
         else:
             self.up.set_text(self.up.get_text()[0].format('NO'))
+        self.name.set_text(self.name.get_text()[0].format(info['name']))
         self.mac.set_text(self.mac.get_text()[0].format(info['mac']))
         self.method.set_text(self.method.get_text()[0].format(info['method']))
         self.last_seen.set_text(self.last_seen.get_text()[0].format(
@@ -185,6 +190,9 @@ class IPView(urwid.WidgetWrap):
                     change[0] = 'mac'
                 elif type_ == 'discovery_history':
                     change[0] = 'discovery method'
+                elif type_ == 'name_history':
+                    change[0] = 'name'
+                    change[1] = ':{}:'.format(change[1])
                 if message is None:
                     message = "changed {} to '{}'".format(
                         str(change[0]), str(change[1])
@@ -195,6 +203,7 @@ class IPView(urwid.WidgetWrap):
                         message
                     ))
                 yield
+            yield
         changes_human_readable = list(reversed(changes_human_readable))
         if changes_human_readable:
             self.set_changes(changes_human_readable)
@@ -204,12 +213,14 @@ class IPView(urwid.WidgetWrap):
 
     get_ip_info = common.get_ip_info
     get_mac_info = common.get_mac_info
+    get_name_info = common.get_name_info
+    get_all_info = common.get_all_info
 
     def set_changes(self, changes):
         changes_ = []
         for change in changes:
             txt = common.SelectableText(change)
-            txt.callback = self.get_mac_info
+            txt.callback = self.get_all_info
             changes_.append(urwid.AttrWrap(txt, None, 'reveal focus'))
         self.history_list.genericList.content[:] = changes_
         self.history_list.genericList.content.set_focus(0)

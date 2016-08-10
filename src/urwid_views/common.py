@@ -5,6 +5,7 @@ from urwid_satext import sat_widgets
 
 IPView = None  # to be imported from urwid_views.ip
 MACView = None  # to be imported from urwid_views.mac
+NameView = None  # to be imported from urwid_views.name
 ui = None  # to be imported from main
 
 
@@ -107,6 +108,29 @@ def get_mac_info(self, label):
         return True
     else:
         return False
+
+def get_name_info(self, label):
+    cmp = re.compile(
+        r"\':.*:\'",
+    )
+    name = cmp.search(label)
+    if name:
+        name = name.group()[2:-2]
+        self.frame.set_status("Jumping to MAC {}...".format(name))
+        self.frame.set_body(
+            NameView(name, self.handler, self.frame)
+        )
+        return True
+    else:
+        return False
+
+def get_all_info(self, label):
+    if get_ip_info(self, label):
+        return True
+    elif get_mac_info(self, label):
+        return True
+    else:
+        return get_name_info(self, label)
 
 
 class Dialog(urwid.WidgetWrap):

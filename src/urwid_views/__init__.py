@@ -13,6 +13,7 @@ from .main import MainView
 from .guide import GuideView
 from . import ip
 from . import mac
+from . import name
 from . import common
 
 
