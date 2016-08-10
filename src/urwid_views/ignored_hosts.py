@@ -22,10 +22,14 @@ class IgnoredHostsView(urwid.WidgetWrap):
     def refresh(self):
         self.ips_list = common.EntriesList(options=["Waiting...", "  ...", "  ..."], max_height=100, lesser_height=8)
         self.macs_list = common.EntriesList(options=["Waiting...", "  ...", "  ..."], max_height=100, lesser_height=8)
+        self.names_list = common.EntriesList(options=["Waiting...", "  ...", "  ..."], max_height=100, lesser_height=8)
         self.cols = urwid.Columns([
             self.ips_list,
             VerticalSeparator(
                 self.macs_list,
+            ),
+            VerticalSeparator(
+                self.names_list,
             ),
         ])
         super().__init__(urwid.ListBox(urwid.SimpleFocusListWalker([
@@ -113,6 +117,45 @@ class IgnoredHostsView(urwid.WidgetWrap):
             self.macs_list.genericList.content[:] = [
                 urwid.AttrWrap(common.SelectableText("  No MAC found."), None, 'reveal focus')
             ]
+        self.frame.set_status("Waiting for name hosts response...")
+        yield
+        try:
+            name_hosts = yield from self.handler.ignored_names()
+        except Exception as exc:
+            self.frame.set_status("Bad response: {}".format(exc), 'error')
+            return
+        name_hosts = sorted(name_hosts)
+        self.names_list.genericList.content[:] = []
+        self.frame.set_status("Parsing name hosts response...")
+        for host in name_hosts:
+            try:
+                host_info = yield from self.handler.name_info(host)
+            except RequestError as exc:
+                if exc.status == 406:
+                    txt = common.SelectableText("  · {}:\n      Couldn't get more information. "
+                                                "This is probably due to the fact that it had been "
+                                                "ignored since tBB service start.".format(host))
+                    self.names_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
+                    continue
+                else:
+                    self.frame.set_status("Bad response: {}".format(exc), 'error')
+                    return
+            except Exception as exc:
+                self.frame.set_status("Bad response while looking for {}: {}".format(host, exc), 'error')
+                return
+            ips = host_info['ip']
+            if len(ips) > 3:
+                ips = [ips[0], ips[1], ips[2], '...']
+            txt = common.SelectableText("  · ':{}:':\n      {}\n      last update: {} ({} ago).".format(
+                host, str(ips),
+                datetime.datetime.fromtimestamp(host_info['last_update']).strftime("%d/%m/%Y-%H.%M.%S"),
+                (datetime.datetime.now() - datetime.datetime.fromtimestamp(host_info['last_update']))
+            ))
+            txt.callback = self.get_name_info
+            self.names_list.genericList.content.append(urwid.AttrWrap(txt, None, 'reveal focus'))
+            yield
+        if len(self.names_list.genericList.content) <= 0:
+            self.names_list.genericList.content[:] = [urwid.Text("  No Names found.")]
         self.frame.reset_status()
 
     get_ip_info = common.get_ip_info

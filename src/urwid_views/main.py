@@ -45,6 +45,7 @@ class MainView(urwid.WidgetWrap):
                     urwid.Button("Ignored Hosts", on_press=self.on_ignored_hosts),
                     urwid.Button("About IP...", on_press=self.on_ip),
                     urwid.Button("About MAC...", on_press=self.on_mac),
+                    urwid.Button("About Name...", on_press=self.on_name),
                 ]))
             ),
         ])
@@ -88,6 +89,22 @@ class MainView(urwid.WidgetWrap):
                                           'error')
                     yield from asyncio.sleep(3)
                     self.frame.reset_status()
+        asyncio.async(wait_for_input(self))
+
+    def on_name(self, user_data):
+        @asyncio.coroutine
+        def wait_for_input(self):
+            dialog = common.OkCancelEntryDialog(
+                "What Name?", entry_caption='',
+                attr='default', width=30, height=8, body=self.frame
+            )
+            if (yield from dialog.listen()):
+                if not self.get_name_info("':{}:'".format(dialog.edit_text)):
+                    self.frame.set_status("Please provide a valid name. Got: '{}'.".format(dialog.edit_text),
+                                          'error')
+                    yield from asyncio.sleep(3)
+                    self.frame.reset_status()
+
         asyncio.async(wait_for_input(self))
 
     @asyncio.coroutine
@@ -167,6 +184,7 @@ class MainView(urwid.WidgetWrap):
 
     get_ip_info = common.get_ip_info
     get_mac_info = common.get_mac_info
+    get_name_info = common.get_name_info
 
     def set_hosts(self, hosts):
         hosts_ = []

@@ -58,7 +58,7 @@ class NameView(urwid.WidgetWrap):
             sure = common.YesNoDialog(
                 "Are you sure you want to set this Name to be ignored?" if not already_ignored \
                     else "Are you sure you want to prevent this Name from being ignored?",
-                attr='default', width=31, height=6 if not already_ignored else 7, body=self.frame
+                attr='default', width=31, height=7 if not already_ignored else 7, body=self.frame
             )
             if (yield from sure.listen()):
                 self.frame.set_status("Performing request for 'ignore'...")
