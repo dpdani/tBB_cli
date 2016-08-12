@@ -22,9 +22,7 @@ class IPView(urwid.WidgetWrap):
     def refresh(self):
         self.header = urwid.Text("Information about IP '{}':")
         self.up = urwid.Text("Up: {}.")
-        self.name = common.SelectableText("Name: ':{}:'.")
-        self.name.callback = self.get_name_info
-        self.name = urwid.AttrWrap(self.name, None, 'reveal focus')
+        self.names_list = common.EntriesList(lesser_height=0, fixed_height=3, options=[])
         self.mac = common.SelectableText("MAC: {}.")
         self.mac.callback = self.get_mac_info
         self.mac = urwid.AttrWrap(self.mac, None, 'reveal focus')
@@ -38,7 +36,8 @@ class IPView(urwid.WidgetWrap):
             urwid.AttrWrap(urwid.Text("IP View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),
             urwid.Padding(self.up, left=1),
-            urwid.Padding(self.name, left=1),
+            urwid.Padding(urwid.Text("Names:"), left=1),
+            urwid.Padding(self.names_list, left=3),
             urwid.Padding(self.mac, left=1),
             urwid.Padding(self.method, left=1),
             urwid.Padding(self.last_seen, left=1),
@@ -151,7 +150,13 @@ class IPView(urwid.WidgetWrap):
             self.up.set_text(self.up.get_text()[0].format('YES'))
         else:
             self.up.set_text(self.up.get_text()[0].format('NO'))
-        self.name.set_text(self.name.get_text()[0].format(info['name']))
+        # self.name.set_text(self.name.get_text()[0].format(info['name']))
+        for name in sorted(info['name']):
+            txt = common.SelectableText("':{}:'".format(name))
+            txt.callback = self.get_name_info
+            txt = urwid.AttrWrap(txt, None, 'reveal focus')
+            self.names_list.genericList.content.append(txt)
+            yield
         self.mac.set_text(self.mac.get_text()[0].format(info['mac']))
         self.method.set_text(self.method.get_text()[0].format(info['method']))
         self.last_seen.set_text(self.last_seen.get_text()[0].format(
