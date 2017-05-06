@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# tBB CLI client startup script.
+# The folder in which this script is located
+# is the folder tBB_cli should be run from.
+
+python3 src/main.py "$@"
