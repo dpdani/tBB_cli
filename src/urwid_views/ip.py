@@ -31,7 +31,7 @@ class IPView(urwid.WidgetWrap):
         self.last_seen = urwid.Text("Last seen: {} ({} ago).")
         self.ignored = urwid.Text("Ignored: {}.")
         self.priority_txt = urwid.Text("Priority: {}.")
-        self.history_list = common.EntriesList(lesser_height=17, options=[], max_height=100)
+        self.history_list = common.EntriesList(lesser_height=19, options=[], max_height=100)
         left_contents = [
             urwid.AttrWrap(urwid.Text("IP View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),

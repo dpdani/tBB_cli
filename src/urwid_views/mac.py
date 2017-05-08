@@ -25,7 +25,7 @@ class MACView(urwid.WidgetWrap):
         self.ignored = urwid.Text("Ignored: {}.")
         self.ip_list = common.EntriesList(options=['Waiting...'], fixed_height=4, max_height=4, lesser_height=0)
         self.last_update = urwid.Text("Last updated: {} ({} ago).")
-        self.history_list = common.EntriesList(lesser_height=15, options=[], max_height=1)
+        self.history_list = common.EntriesList(lesser_height=17, options=[], max_height=1)
         left_contents = [
             urwid.AttrWrap(urwid.Text("MAC View", 'center'), 'header'),
             urwid.AttrWrap(self.header, 'mainview_title'),
