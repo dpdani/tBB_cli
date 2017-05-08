@@ -151,12 +151,18 @@ class IPView(urwid.WidgetWrap):
         else:
             self.up.set_text(self.up.get_text()[0].format('NO'))
         # self.name.set_text(self.name.get_text()[0].format(info['name']))
-        for name in sorted(info['name']):
-            txt = common.SelectableText("':{}:'".format(name))
-            txt.callback = self.get_name_info
-            txt = urwid.AttrWrap(txt, None, 'reveal focus')
-            self.names_list.genericList.content.append(txt)
-            yield
+        if info['name'] is None:
+            self.names_list.genericList.content.append(
+                urwid.AttrWrap(common.SelectableText("No names found."),
+                    None, 'reveal focus')
+            )
+        else:
+            for name in sorted(info['name']):
+                txt = common.SelectableText("':{}:'".format(name))
+                txt.callback = self.get_name_info
+                txt = urwid.AttrWrap(txt, None, 'reveal focus')
+                self.names_list.genericList.content.append(txt)
+                yield
         self.mac.set_text(self.mac.get_text()[0].format(info['mac']))
         self.method.set_text(self.method.get_text()[0].format(info['method']))
         self.last_seen.set_text(self.last_seen.get_text()[0].format(
